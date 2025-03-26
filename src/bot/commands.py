@@ -61,6 +61,6 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Use the button below to return to the main menu:",
+        text="Choose your next step:",
         reply_markup=get_main_menu_button()
     )
