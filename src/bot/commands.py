@@ -8,7 +8,7 @@ from telegram.ext import (
     filters
 )
 
-from bot.keyboards import get_main_menu_button, get_random_menu_button, get_talk_menu_button
+from bot.keyboards import get_main_menu_button, get_random_menu_button, get_talk_menu_button, end_chat_button
 from bot.message_sender import send_html_message, send_image_bytes, show_menu
 from bot.resource_loader import load_message, load_image, load_menu, load_prompt
 from db.repository import GptSessionRepository
@@ -154,7 +154,7 @@ gpt_conv_handler = ConversationHandler(
 # /talk
 #=====================================================================================================
 
-async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def choose_personality(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Показывает пользователю меню выбора личности."""
 
     intro = await load_message("talk")
@@ -185,21 +185,17 @@ async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def start_dialogue(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обрабатывает выбор личности и запускает режим диалога."""
     query = update.callback_query
-    personality = query.data  # Получаем выбор пользователя
+    personality = query.data
 
     prompt = await load_prompt(f"{personality}")
 
-    # if personality not in PERSONALITY_PROMPTS:
-    #     await query.answer("Некорректный выбор.")
-    #     return ConversationHandler.END
-
-    context.user_data["personality"] = personality  # Запоминаем личность
+    context.user_data["personality"] = personality
     context.user_data["system_prompt"] = prompt
 
     await query.answer()
     await send_html_message(update, context, f"Ты выбрал {personality.capitalize()}. Начинай разговор!")
 
-    return AWAITING_USER_MESSAGE  # Переводим в режим чата
+    return AWAITING_USER_MESSAGE
 
 
 async def chat_with_personality(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -209,26 +205,45 @@ async def chat_with_personality(update: Update, context: ContextTypes.DEFAULT_TY
     openai_client: OpenAIClient = context.bot_data["openai_client"]
 
     reply = await openai_client.ask(user_message=user_message, system_prompt=system_prompt)
-    await send_html_message(update, context, reply)
 
-    return AWAITING_USER_MESSAGE  # Оставляем пользователя в чате
+    await send_html_message(update, context, reply)
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="You can end the chat or ask the next question",
+        reply_markup=end_chat_button()
+    )
+
+    return AWAITING_USER_MESSAGE
+
+
+async def button_end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Завершает чат и возвращает пользователя в главное меню."""
+    query = update.callback_query
+    await query.answer()
+    await update.callback_query.message.reply_text("Чат завершен.")
+
+    return await start(update, context)
 
 
 async def end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Завершает диалог и возвращает пользователя в главное меню."""
-    await send_html_message(update, context, "Диалог завершен. Возвращаю в главное меню.")
-    return ConversationHandler.END
+    """Завершает чат и отправляет пользователя в главное меню"""
+    await update.callback_query.answer()  # Закрыть уведомление о нажатии кнопки
+    await update.callback_query.message.reply_text("Чат завершен.")
+
+
+    return await start(update, context)
 
 
 talk_conv_handler = ConversationHandler(
     entry_points=[
-        CommandHandler("talk", talk),
+        CommandHandler("talk", choose_personality),
         CallbackQueryHandler(start_dialogue, pattern="^(einstein|napoleon|king|mercury)$")
     ],
     states={
         AWAITING_USER_MESSAGE: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, chat_with_personality),
-            CommandHandler("stop", end_chat)
+            CommandHandler("stop", end_chat),
+            CallbackQueryHandler(button_end_chat, pattern="^end_chat$")
         ]
     },
     fallbacks=[CommandHandler("stop", end_chat)]

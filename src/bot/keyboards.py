@@ -20,3 +20,8 @@ def get_talk_menu_button() -> InlineKeyboardMarkup:
          InlineKeyboardButton("Freddie Mercury", callback_data="mercury")],
         [InlineKeyboardButton("🏠 Main Menu", callback_data="start")]
     ])
+
+def end_chat_button() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("End chat", callback_data="end_chat")]
+    ])
