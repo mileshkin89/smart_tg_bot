@@ -8,7 +8,8 @@ from telegram.ext import (
 from bot.commands import (
     start,
     random,
-    gpt_conv_handler
+    gpt_conv_handler,
+    talk_conv_handler
 )
 
 from db.initializer import DatabaseInitializer
@@ -37,10 +38,11 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("random", random))
 
-    app.add_handler(gpt_conv_handler)
-
     app.add_handler(CallbackQueryHandler(start, pattern="^start$"))
-    app.add_handler(CallbackQueryHandler(start, pattern="^random$"))
+    app.add_handler(CallbackQueryHandler(random, pattern="^random$"))
+
+    app.add_handler(gpt_conv_handler)
+    app.add_handler(talk_conv_handler)
 
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
