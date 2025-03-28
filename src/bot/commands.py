@@ -284,9 +284,8 @@ def parse_quiz_question(text: str):
     question = question_match.group(1).strip()
     options = {key: value.strip() for key, value in options_match}
     correct_answer_letter = correct_answer_match.group(1).strip()
-    correct_answer_text = options.get(correct_answer_letter, "Unknown")
 
-    return question, options, correct_answer_text
+    return question, options, correct_answer_letter
 
 
 def update_quiz_score(context: ContextTypes.DEFAULT_TYPE, user_id: int, user_answer: str) -> tuple[bool, int]:
@@ -353,16 +352,27 @@ async def choose_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     query = update.callback_query
     quiz_topic = query.data
 
     await query.answer()
 
+    if quiz_topic == "next_question_quiz":
+        quiz_topic = context.user_data.get("quiz_topic", None)
+    else:
+        # Только если это не "Next question", сохраняем новую тему
+        context.user_data["quiz_topic"] = quiz_topic
+
+    if not quiz_topic:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⚠️ Ошибка: тема викторины не найдена. Пожалуйста, выберите тему снова."
+        )
+        return QUIZ_MESSAGE  # Возвращаем в состояние выбора темы
+
+
     user_message = f"Generate an interesting mid-level question on the topic: {quiz_topic}"
     system_prompt = await load_prompt("quiz")
-
-    context.user_data["quiz_topic"] = quiz_topic
 
     openai_client: OpenAIClient = context.bot_data["openai_client"]
 
@@ -371,15 +381,22 @@ async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         system_prompt=system_prompt
     )
 
+    print(f"🔍 OpenAI response:\n{reply}")
+    print(f"Выбранная тема {quiz_topic}")
+
+
     # Парсим вопрос и варианты
     try:
         question, options, correct_answer = parse_quiz_question(reply)
     except ValueError as e:
+        print(f"❌ Ошибка парсинга: {e}")
+        print(f"🔍 Ответ от OpenAI:\n{reply}")  # Логируем весь ответ
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="⚠️ Error generating quiz question. Try again later."
+            text=f"⚠️ Ошибка обработки вопроса. Попробуйте ещё раз.\n\n(Лог: {e})"
         )
         return
+
 
     context.user_data["correct_answer"] = correct_answer  # Сохраняем правильный ответ
 
@@ -387,11 +404,13 @@ async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton(f"{key}) {value}", callback_data=key)] for key, value in options.items()]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
+    text = f"Selected topic: {quiz_topic.capitalize()}\n\n{question}"
+
     # Отправляем вопрос и кнопки
     await send_html_message(
         update=update,
         context=context,
-        text=question
+        text=text
     )
 
     await context.bot.send_message(
@@ -427,9 +446,10 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def next_question_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     query = update.callback_query
     await query.answer()
+
+    context.user_data["quiz_topic"] = context.user_data.get("quiz_topic", "science")
 
     return await get_question(update, context)
 
@@ -455,14 +475,16 @@ quiz_conv_handler = ConversationHandler(
     ],
     states={
         QUIZ_MESSAGE: [
-            CallbackQueryHandler(choose_topic, pattern="^(science|sport|art|cinema)$"),
-            CallbackQueryHandler(get_question, pattern="^A|B|C|D$"),
-            CallbackQueryHandler(handle_answer, pattern="^next_question_quiz|change_topic_quiz|end_quiz$")
+            CallbackQueryHandler(get_question, pattern="^(science|sport|art|cinema)$"),
+            CallbackQueryHandler(handle_answer, pattern="^[ABCD]$"), #CallbackQueryHandler(get_question, pattern="^A|B|C|D$"),
+            CallbackQueryHandler(next_question_quiz, pattern="^next_question_quiz$"),
+            CallbackQueryHandler(change_topic_quiz, pattern="^change_topic_quiz$"),
+            CallbackQueryHandler(end_quiz, pattern="^end_quiz$")
         ]
     },
     fallbacks=[
-        CallbackQueryHandler(end_quiz, start),
-        CallbackQueryHandler(next_question_quiz, get_question),
-        CallbackQueryHandler(change_topic_quiz, choose_topic)
+        CallbackQueryHandler(end_quiz, pattern="^(start)$"),
+        CallbackQueryHandler(next_question_quiz, pattern="^(get_question)$"),
+        CallbackQueryHandler(change_topic_quiz, pattern="^(choose_topic)$")
     ]
 )

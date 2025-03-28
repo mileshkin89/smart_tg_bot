@@ -4,7 +4,10 @@ Your task is to create a multiple-choice quiz question on the topic from user_me
 Format your response exactly as follows:
 Question: <text of the question>
 
-A) <option 1> B) <option 2> C) <option 3> D) <option 4>
+A) <option 1>
+B) <option 2>
+C) <option 3>
+D) <option 4>
 
 Correct Answer: <letter corresponding to the correct answer>
 
