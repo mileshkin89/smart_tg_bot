@@ -23,7 +23,7 @@ from bot.keyboards import (
 )
 
 
-AWAITING_USER_MESSAGE = 1
+GPT_MESSAGE, TALK_MESSAGE, QUIZ_MESSAGE = range(3)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -113,7 +113,7 @@ async def gpt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["system_prompt"] = prompt
 
-    return AWAITING_USER_MESSAGE
+    return GPT_MESSAGE
 
 
 async def gpt_handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -134,7 +134,7 @@ async def gpt_handle_user_message(update: Update, context: ContextTypes.DEFAULT_
         text=reply
     )
 
-    return AWAITING_USER_MESSAGE
+    return GPT_MESSAGE
 
 # Переделать на кнупки:
 async def gpt_end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -150,7 +150,7 @@ async def gpt_end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 gpt_conv_handler = ConversationHandler(
     entry_points=[CommandHandler("gpt", gpt)],
     states={
-        AWAITING_USER_MESSAGE: [
+        GPT_MESSAGE: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, gpt_handle_user_message),
             CommandHandler("stop", gpt_end_chat)  # Позволяет выйти из чата командой /stop
         ]
@@ -203,7 +203,7 @@ async def start_dialogue(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     await send_html_message(update, context, f"Ты выбрал {personality.capitalize()}. Начинай разговор!")
 
-    return AWAITING_USER_MESSAGE
+    return TALK_MESSAGE
 
 
 async def chat_with_personality(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -221,7 +221,7 @@ async def chat_with_personality(update: Update, context: ContextTypes.DEFAULT_TY
         reply_markup=get_end_chat_button()
     )
 
-    return AWAITING_USER_MESSAGE
+    return TALK_MESSAGE
 
 
 async def button_end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -248,7 +248,7 @@ talk_conv_handler = ConversationHandler(
         CallbackQueryHandler(start_dialogue, pattern="^(einstein|napoleon|king|mercury)$")
     ],
     states={
-        AWAITING_USER_MESSAGE: [
+        TALK_MESSAGE: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, chat_with_personality),
             CommandHandler("stop", end_chat),
             CallbackQueryHandler(button_end_chat, pattern="^end_chat$")
@@ -349,6 +349,8 @@ async def choose_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=get_quiz_choose_topic_button()
     )
 
+    return QUIZ_MESSAGE
+
 
 async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -398,8 +400,10 @@ async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
+    return QUIZ_MESSAGE
 
-async def get_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = update.effective_user.id  # ID пользователя
     user_answer = query.data  # Буква ответа (A, B, C или D)
@@ -418,6 +422,8 @@ async def get_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=f"{result_text}\n\n{score_text}",
         reply_markup=get_quiz_menu_button()  # Кнопки: следующий вопрос, сменить тему, завершить
     )
+
+    return QUIZ_MESSAGE
 
 
 async def next_question_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -445,15 +451,18 @@ async def end_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 quiz_conv_handler = ConversationHandler(
     entry_points=[
-        CommandHandler("quiz", choose_topic),
-        CallbackQueryHandler(choose_topic, pattern="^(science|sport|art|cinema)$")
+        CommandHandler("quiz", choose_topic)
     ],
     states={
-        AWAITING_USER_MESSAGE: [
-            MessageHandler(filters.TEXT & ~filters.COMMAND, chat_with_personality),
-            CommandHandler("stop", end_chat),
-            CallbackQueryHandler(button_end_chat, pattern="^end_chat$")
+        QUIZ_MESSAGE: [
+            CallbackQueryHandler(choose_topic, pattern="^(science|sport|art|cinema)$"),
+            CallbackQueryHandler(get_question, pattern="^A|B|C|D$"),
+            CallbackQueryHandler(handle_answer, pattern="^next_question_quiz|change_topic_quiz|end_quiz$")
         ]
     },
-    fallbacks=[CommandHandler("stop", end_chat)]
+    fallbacks=[
+        CallbackQueryHandler(end_quiz, start),
+        CallbackQueryHandler(next_question_quiz, get_question),
+        CallbackQueryHandler(change_topic_quiz, choose_topic)
+    ]
 )
