@@ -10,7 +10,8 @@ from bot.commands import (
     random,
     gpt_conv_handler,
     talk_conv_handler,
-    quiz_conv_handler
+    quiz_conv_handler,
+    translate_conv_handler
 )
 
 from db.initializer import DatabaseInitializer
@@ -45,6 +46,7 @@ def main():
     app.add_handler(gpt_conv_handler)
     app.add_handler(talk_conv_handler)
     app.add_handler(quiz_conv_handler)
+    app.add_handler(translate_conv_handler)
 
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 

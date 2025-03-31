@@ -4,6 +4,7 @@ from bot.resource_loader import load_message, load_image, load_prompt
 from services import OpenAIClient
 import re
 from .start import start
+from bot.keyboards import get_quiz_choose_topic_button, get_quiz_menu_button
 
 from telegram.ext import (
     ContextTypes,
@@ -12,9 +13,8 @@ from telegram.ext import (
     CallbackQueryHandler
 )
 
-from bot.keyboards import get_quiz_choose_topic_button, get_quiz_menu_button
-
 QUIZ_MESSAGE = "QUIZ"
+
 
 def parse_quiz_question(text: str):
     """
@@ -45,23 +45,9 @@ def parse_quiz_question(text: str):
 
 
 def update_quiz_score(context: ContextTypes.DEFAULT_TYPE, user_id: int, user_answer: str) -> tuple[bool, int]:
-    """
-    Обновляет количество правильных ответов пользователя.
 
-    Аргументы:
-    - context: объект контекста бота
-    - user_id: ID пользователя
-    - user_answer: Ответ пользователя (буква A, B, C или D)
-
-    Возвращает:
-    - is_correct: True, если ответ верный, иначе False
-    - total_correct: Общее количество правильных ответов пользователя
-    """
-
-    # Получаем правильный ответ из user_data
     correct_answer = context.user_data.get("correct_answer", "")
 
-    # Если заходит новый пользователь — обнуляем счётчик
     if "quiz_scores" not in context.user_data:
         context.user_data["quiz_scores"] = {}
 
@@ -116,7 +102,6 @@ async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if quiz_topic == "next_question_quiz":
         quiz_topic = context.user_data.get("quiz_topic", None)
     else:
-        # Только если это не "Next question", сохраняем новую тему
         context.user_data["quiz_topic"] = quiz_topic
 
     if not quiz_topic:
@@ -124,7 +109,7 @@ async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=update.effective_chat.id,
             text="⚠️ Ошибка: тема викторины не найдена. Пожалуйста, выберите тему снова."
         )
-        return QUIZ_MESSAGE  # Возвращаем в состояние выбора темы
+        return QUIZ_MESSAGE
 
 
     user_message = f"Generate an interesting mid-level question on the topic: {quiz_topic}"
@@ -141,7 +126,6 @@ async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"Выбранная тема {quiz_topic}")
 
 
-    # Парсим вопрос и варианты
     try:
         question, options, correct_answer = parse_quiz_question(reply)
     except ValueError as e:
@@ -156,13 +140,11 @@ async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["correct_answer"] = correct_answer  # Сохраняем правильный ответ
 
-    # Создаём кнопки для выбора ответа
     keyboard = [[InlineKeyboardButton(f"{key}) {value}", callback_data=key)] for key, value in options.items()]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     text = f"Selected topic: {quiz_topic.capitalize()}\n\n{question}"
 
-    # Отправляем вопрос и кнопки
     await send_html_message(
         update=update,
         context=context,
@@ -180,8 +162,8 @@ async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    user_id = update.effective_user.id  # ID пользователя
-    user_answer = query.data  # Буква ответа (A, B, C или D)
+    user_id = update.effective_user.id
+    user_answer = query.data
 
     await query.answer()
 
