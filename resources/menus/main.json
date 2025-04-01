@@ -1,7 +1,8 @@
 {
   "start": "Main menu",
   "random": "Get a random interesting fact 🧠",
-  "gpt": "Ask a question to ChatGPT 🤖",
+  "gpt": "Write a question ChatGPT 🤖",
+  "voice_chat": "Talk to ChatGPT",
   "talk": "Talk to a famous personality 👤",
   "quiz": "Take a quiz ❓",
   "translate" : "Translate text"

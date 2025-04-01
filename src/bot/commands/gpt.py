@@ -15,7 +15,7 @@ from telegram.ext import (
 GPT_MESSAGE = "GPT"
 
 
-async def gpt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def gpt_intro(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     prompt = await load_prompt("gpt")
     intro = await load_message("gpt")
@@ -70,7 +70,7 @@ async def gpt_end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 gpt_conv_handler = ConversationHandler(
-    entry_points=[CommandHandler("gpt", gpt)],
+    entry_points=[CommandHandler("gpt", gpt_intro)],
     states={
         GPT_MESSAGE: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, gpt_handle_user_message),

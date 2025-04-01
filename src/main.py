@@ -9,6 +9,8 @@ from bot.commands import (
     start,
     random,
     gpt_conv_handler,
+    voice_chat_intro,
+    voice_handler,
     talk_conv_handler,
     quiz_conv_handler,
     translate_conv_handler
@@ -39,11 +41,13 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("random", random))
+    app.add_handler(CommandHandler("voice_chat", voice_chat_intro))
 
     app.add_handler(CallbackQueryHandler(start, pattern="^start$"))
     app.add_handler(CallbackQueryHandler(random, pattern="^random$"))
 
     app.add_handler(gpt_conv_handler)
+    app.add_handler(voice_handler)
     app.add_handler(talk_conv_handler)
     app.add_handler(quiz_conv_handler)
     app.add_handler(translate_conv_handler)
