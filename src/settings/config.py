@@ -18,6 +18,8 @@ class AppConfig(BaseSettings):
     path_to_menus: Path = BASE_DIR / "resources" / "menus"
     path_to_prompts: Path = BASE_DIR / "resources" / "prompts"
 
+    path_to_google_credentials: Path = BASE_DIR / "src" / "settings" / "google_credentials"
+
     path_to_logs: Path = BASE_DIR / "logs"
 
     path_to_db: Path = BASE_DIR / "storage" / "chat_sessions.db"

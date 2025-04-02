@@ -18,7 +18,7 @@ from bot.commands import (
 
 from db.initializer import DatabaseInitializer
 from db.repository import GptSessionRepository
-from services import OpenAIClient
+from services import OpenAIClient, SpeechToText
 from settings.config import config
 
 
@@ -38,6 +38,9 @@ def main():
 
     app.bot_data["openai_client"] = openai_client
     app.bot_data["session_repository"] = session_repository
+
+    speech_to_text = SpeechToText(credentials_path=config.path_to_google_credentials / "STT.json")
+    app.bot_data["speech_to_text"] = speech_to_text
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("random", random))
