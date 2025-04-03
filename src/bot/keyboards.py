@@ -76,3 +76,38 @@ def get_translate_menu_button() -> InlineKeyboardMarkup:
 
 
 
+def get_choose_language_button() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("English", callback_data="english"),
+        InlineKeyboardButton("French", callback_data="french")],
+        [InlineKeyboardButton("German", callback_data="german"),
+         InlineKeyboardButton("Italian", callback_data="italian")],
+        [InlineKeyboardButton("Spanish", callback_data="spanish"),
+         InlineKeyboardButton("Ukrainian", callback_data="ukrainian")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="start")]
+    ])
+
+def get_translate_menu_button() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("Change language", callback_data="change_language"),
+        InlineKeyboardButton("Complete translate", callback_data="end_translate")]
+    ])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
