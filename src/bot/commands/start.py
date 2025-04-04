@@ -10,20 +10,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     image_bytes = await load_image("main")
     menu_commands = await load_menu("main")
 
-    await send_image_bytes(
-        update=update,
-        context=context,
-        image_bytes=image_bytes,
-    )
+    await send_image_bytes(update=update, context=context, image_bytes=image_bytes)
+    await send_html_message(update=update, context=context, text=text)
 
-    await send_html_message(
-        update=update,
-        context=context,
-        text=text,
-    )
-
-    await show_menu(
-        update=update,
-        context=context,
-        commands=menu_commands
-    )
+    await show_menu(update=update, context=context, commands=menu_commands)

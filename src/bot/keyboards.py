@@ -58,6 +58,11 @@ def get_translate_menu_button() -> InlineKeyboardMarkup:
         InlineKeyboardButton("Complete translate", callback_data="end_translate")]
     ])
 
+def get_resume_button() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("Confirm", callback_data="confirm"),
+        InlineKeyboardButton("Edit", callback_data="edit")]
+    ])
 
 
 

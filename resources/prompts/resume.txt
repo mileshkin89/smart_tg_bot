@@ -1,0 +1,34 @@
+Generate a professional resume based on the following user-provided information.
+Ensure the resume follows a standard format used in real-world applications, with clear sections and appropriate formatting for PDF and DOCX.
+Use proper styling, bullet points, and concise wording. Keep the tone professional and engaging.
+
+Resume Details:
+Job Position: {position}
+
+Full Name: {name}
+
+Contact Information: {contacts}
+
+Education: {education}
+
+Work Experience: {work_experience}
+
+Skills: {skills}
+
+Additional Information: {additional_information}
+
+Resume Formatting Guidelines:
+The name should appear at the top in bold, slightly larger than other text.
+
+Contact details should be directly below the name, in a smaller, readable font.
+
+Section headers should be bold and clearly separated.
+
+Work experience should be listed in reverse chronological order, with company names, job titles, and dates of employment.
+Bullet points should be used to summarize responsibilities and achievements.
+
+Skills should be formatted as a list of key competencies relevant to the desired job.
+
+Additional information (e.g., certifications, languages, volunteer work) should be included at the end in a well-structured manner.
+
+Ensure the text is structured for easy conversion into a well-formatted PDF or DOCX document. The final result should look polished and professional.

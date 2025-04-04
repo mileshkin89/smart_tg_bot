@@ -70,19 +70,8 @@ async def choose_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     intro = await load_message("quiz")
     image_bytes = await load_image("quiz")
 
-    openai_client: OpenAIClient = context.bot_data["openai_client"]
-
-    await send_image_bytes(
-        update=update,
-        context=context,
-        image_bytes=image_bytes
-    )
-
-    await send_html_message(
-        update=update,
-        context=context,
-        text=intro
-    )
+    await send_image_bytes(update=update, context=context, image_bytes=image_bytes)
+    await send_html_message(update=update, context=context, text=intro)
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,

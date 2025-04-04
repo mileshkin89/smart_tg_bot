@@ -4,5 +4,6 @@
   "gpt": "Ask a question to ChatGPT 🤖",
   "talk": "Talk to a famous personality 👤",
   "quiz": "Take a quiz ❓",
-  "translate" : "Translate text"
+  "translate": "Translate text",
+  "resume": "Create resume"
 }

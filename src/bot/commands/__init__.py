@@ -4,3 +4,4 @@ from .gpt import gpt_conv_handler
 from .talk import talk_conv_handler
 from .quiz import quiz_conv_handler
 from .translate import translate_conv_handler
+from .resume import resume_handler

@@ -2,6 +2,7 @@ from telegram import Update
 from bot.message_sender import send_html_message, send_image_bytes
 from bot.resource_loader import load_message, load_image, load_prompt
 from services import OpenAIClient
+from bot.sanitize_html import sanitize_html
 
 from telegram.ext import (
     ContextTypes,
@@ -15,23 +16,14 @@ from telegram.ext import (
 GPT_MESSAGE = "GPT"
 
 
-async def gpt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def gpt_intro(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     prompt = await load_prompt("gpt")
     intro = await load_message("gpt")
     image_bytes = await load_image("gpt")
 
-    await send_image_bytes(
-        update=update,
-        context=context,
-        image_bytes=image_bytes
-    )
-
-    await send_html_message(
-        update=update,
-        context=context,
-        text=intro
-    )
+    await send_image_bytes(update=update, context=context, image_bytes=image_bytes)
+    await send_html_message(update=update, context=context, text=intro)
 
     context.user_data["system_prompt"] = prompt
 
@@ -49,6 +41,7 @@ async def gpt_handle_user_message(update: Update, context: ContextTypes.DEFAULT_
         user_message=user_message,
         system_prompt=system_prompt
     )
+    reply = sanitize_html(reply)
 
     await send_html_message(
         update=update,
@@ -70,7 +63,7 @@ async def gpt_end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 gpt_conv_handler = ConversationHandler(
-    entry_points=[CommandHandler("gpt", gpt)],
+    entry_points=[CommandHandler("gpt", gpt_intro)],
     states={
         GPT_MESSAGE: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, gpt_handle_user_message),

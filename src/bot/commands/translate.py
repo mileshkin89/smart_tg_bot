@@ -4,6 +4,7 @@ from bot.resource_loader import load_message, load_image, load_prompt
 from .start import start
 from bot.keyboards import get_choose_language_button, get_translate_menu_button
 from services import OpenAIClient
+from bot.sanitize_html import sanitize_html
 
 from telegram.ext import (
     ContextTypes,
@@ -64,6 +65,7 @@ async def translate_user_message(update: Update, context: ContextTypes.DEFAULT_T
     openai_client: OpenAIClient = context.bot_data["openai_client"]
 
     reply = await openai_client.ask(user_message=user_message_to_translate, system_prompt=system_prompt)
+    reply = sanitize_html(reply)
 
     await send_html_message(update, context, reply)
 
