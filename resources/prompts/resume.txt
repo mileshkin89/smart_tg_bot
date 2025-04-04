@@ -32,3 +32,5 @@ Skills should be formatted as a list of key competencies relevant to the desired
 Additional information (e.g., certifications, languages, volunteer work) should be included at the end in a well-structured manner.
 
 Ensure the text is structured for easy conversion into a well-formatted PDF or DOCX document. The final result should look polished and professional.
+
+Don't use HTML tags

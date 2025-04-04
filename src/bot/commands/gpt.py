@@ -1,4 +1,5 @@
 from telegram import Update
+from telegram.error import BadRequest
 from bot.message_sender import send_html_message, send_image_bytes
 from bot.resource_loader import load_message, load_image, load_prompt
 from services import OpenAIClient
@@ -43,11 +44,10 @@ async def gpt_handle_user_message(update: Update, context: ContextTypes.DEFAULT_
     )
     reply = sanitize_html(reply)
 
-    await send_html_message(
-        update=update,
-        context=context,
-        text=reply
-    )
+    try:
+        await send_html_message(update=update, context=context,text=reply)
+    except BadRequest as e:
+        print(f"Error sending HTML message: {e}")
 
     return GPT_MESSAGE
 

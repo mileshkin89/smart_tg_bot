@@ -1,4 +1,5 @@
 from telegram import Update
+from telegram.error import BadRequest
 from bot.message_sender import send_html_message, send_image_bytes
 from bot.resource_loader import load_message, load_image, load_prompt
 from services import OpenAIClient
@@ -144,8 +145,10 @@ async def generate_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reply = await openai_client.ask(user_message=user_message, system_prompt=system_prompt)
     reply = sanitize_html(reply)
-
-    await send_html_message(update=update, context=context, text=f"Here is your resume draft:\n\n{reply}")
+    try:
+        await send_html_message(update=update, context=context, text=f"Here is your resume draft:\n\n{reply}")
+    except BadRequest as e:
+        print(f"Error sending HTML message: {e}")
 
     return ConversationHandler.END
 

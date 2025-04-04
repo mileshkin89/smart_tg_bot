@@ -8,3 +8,5 @@ Translate the rest of the input text into this language while maintaining fluenc
 Avoid literal or overly mechanical translations—prioritize meaning and linguistic authenticity.
 If the input contains ambiguous words, use the most contextually appropriate translation.
 Do not include the target language name in the output.
+
+Don't use HTML tags

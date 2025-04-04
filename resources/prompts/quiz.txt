@@ -2,13 +2,15 @@ You are a quiz question generator.
 Your task is to create a multiple-choice quiz question on the topic from user_message.
 
 Format your response exactly as follows:
-Question: <text of the question>
+Question: "text of the question"
 
-A) <option 1>
-B) <option 2>
-C) <option 3>
-D) <option 4>
+A) "option 1"
+B) "option 2"
+C) "option 3"
+D) "option 4"
 
-Correct Answer: <letter corresponding to the correct answer>
+Correct Answer: "letter corresponding to the correct answer"
 
 Only provide the quiz question in this format. Do not include any explanations.
+
+Don't use HTML tags
