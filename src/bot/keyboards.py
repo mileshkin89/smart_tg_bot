@@ -64,38 +64,17 @@ def get_resume_button() -> InlineKeyboardMarkup:
         InlineKeyboardButton("Edit", callback_data="edit")]
     ])
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def get_choose_language_button() -> InlineKeyboardMarkup:
+def get_resume_format_file_button() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("English", callback_data="english"),
-        InlineKeyboardButton("French", callback_data="french")],
-        [InlineKeyboardButton("German", callback_data="german"),
-         InlineKeyboardButton("Italian", callback_data="italian")],
-        [InlineKeyboardButton("Spanish", callback_data="spanish"),
-         InlineKeyboardButton("Ukrainian", callback_data="ukrainian")],
-        [InlineKeyboardButton("🏠 Main Menu", callback_data="start")]
+        [InlineKeyboardButton("PDF", callback_data="PDF"),
+        InlineKeyboardButton("DOCX", callback_data="DOCX")]
     ])
 
-def get_translate_menu_button() -> InlineKeyboardMarkup:
+def get_resume_format_file_button_end() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Change language", callback_data="change_language"),
-        InlineKeyboardButton("Complete translate", callback_data="end_translate")]
+        [InlineKeyboardButton("PDF", callback_data="PDF"),
+        InlineKeyboardButton("DOCX", callback_data="DOCX")],
+        [InlineKeyboardButton("Complete", callback_data="complete")]
     ])
 
 

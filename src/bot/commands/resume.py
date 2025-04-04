@@ -3,8 +3,10 @@ from telegram.error import BadRequest
 from bot.message_sender import send_html_message, send_image_bytes
 from bot.resource_loader import load_message, load_image, load_prompt
 from services import OpenAIClient
-from bot.keyboards import get_resume_button
+from .start import start
+from bot.keyboards import get_resume_button, get_resume_format_file_button, get_resume_format_file_button_end
 from bot.sanitize_html import sanitize_html
+from bot.file_converter import convert_to_file
 
 from telegram.ext import (
     ContextTypes,
@@ -24,6 +26,7 @@ WORK_EXPERIENCE = "WORK EXPERIENCE"
 SKILLS = "SKILLS"
 ADDITIONAL_INFORMATION = "ADDITIONAL INFORMATION"
 CONFIRM = "CONFIRM"
+FORMAT_FILE = "FORMAT FILE"
 
 
 async def get_position(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -145,12 +148,57 @@ async def generate_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reply = await openai_client.ask(user_message=user_message, system_prompt=system_prompt)
     reply = sanitize_html(reply)
+    context.user_data["resume"] = reply
+
     try:
         await send_html_message(update=update, context=context, text=f"Here is your resume draft:\n\n{reply}")
     except BadRequest as e:
         print(f"Error sending HTML message: {e}")
 
-    return ConversationHandler.END
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"Your resume is ready.\n\nIn what format would you like to download it?",
+        reply_markup=get_resume_format_file_button()
+    )
+
+    return FORMAT_FILE
+
+
+async def convert_text_to_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    format_file = query.data
+    print(format_file)
+    resume = context.user_data.get("resume", "")
+
+    resume_file = await convert_to_file(resume, format_file.lower())
+
+    file_name = f"resume.{format_file}"
+
+    await context.bot.send_document(
+        chat_id=update.effective_chat.id,
+        document=resume_file,
+        filename=file_name,
+        caption=f"Here is your resume as {format_file}."
+    )
+
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"If necessary, select another format:",
+        reply_markup=get_resume_format_file_button_end()
+    )
+
+    return FORMAT_FILE
+
+
+async def end_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    query = update.callback_query
+    await query.answer()
+
+    return await start(update, context)
+
 
 
 
@@ -167,6 +215,11 @@ resume_handler = ConversationHandler(
         CONFIRM: [
             CallbackQueryHandler(generate_resume, pattern="^confirm$"),
             CallbackQueryHandler(finalize_resume, pattern="^edit$")
+        ],
+        FORMAT_FILE: [
+            CallbackQueryHandler(convert_text_to_file, pattern="^PDF$"),
+            CallbackQueryHandler(convert_text_to_file, pattern="^DOCX$"),
+            CallbackQueryHandler(start, pattern="^complete$")
         ]
     },
     fallbacks=[]
