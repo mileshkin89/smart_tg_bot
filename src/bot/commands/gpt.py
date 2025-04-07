@@ -21,6 +21,7 @@ logger = get_logger(__name__)
 GPT_MESSAGE = SessionMode.GPT.value
 
 
+
 async def gpt_intro(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     intro = await load_message("gpt")
@@ -30,6 +31,7 @@ async def gpt_intro(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_html_message(update=update, context=context, text=intro)
 
     return GPT_MESSAGE
+
 
 
 async def gpt_handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -64,7 +66,7 @@ async def gpt_handle_user_message(update: Update, context: ContextTypes.DEFAULT_
     except OpenAIError as e:
         logger.warning(f"Assistant failed in /gpt: {e}")
         await update.message.reply_text("Assistant failed to respond. Please try again later.")
-        return
+        return GPT_MESSAGE
 
     reply = sanitize_html(reply)
 
@@ -75,8 +77,10 @@ async def gpt_handle_user_message(update: Update, context: ContextTypes.DEFAULT_
     except BadRequest as e:
         logger.warning(f"Error sending HTML message in /gpt: {e}")
         await update.message.reply_text("Assistant failed to respond. Please try again later.")
+        return GPT_MESSAGE
 
     return GPT_MESSAGE
+
 
 
 async def gpt_end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -87,6 +91,7 @@ async def gpt_end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text="Chat ended. Type /gpt to start again.")
 
     return ConversationHandler.END
+
 
 
 gpt_conv_handler = ConversationHandler(

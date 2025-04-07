@@ -5,7 +5,7 @@ class SessionMode(Enum):
 
     RANDOM = "random"
     GPT = "gpt"
-    TALK = "talk"
+    TALK, CHOOSE_PERSONALITY = "talk", "choose"
     QUIZ = "quiz"
     TRANSLATE = "translate"
     RESUME = "resume"

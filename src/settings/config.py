@@ -5,13 +5,19 @@ BASE_DIR = Path(__file__).parent.parent.parent
 
 
 class AppConfig(BaseSettings):
+
     openai_api_key: str
     tg_bot_api_key: str
-    ai_assistant_random_mileshkin_id: str
-    ai_assistant_gpt_mileshkin_id: str
 
     openai_model: str = "gpt-3.5-turbo"
     openai_model_temperature: float = 1.5
+
+    ai_assistant_random_mileshkin_id: str
+    ai_assistant_gpt_mileshkin_id: str
+    ai_assistant_talk_einstein_mileshkin_id: str
+    ai_assistant_talk_king_mileshkin_id: str
+    ai_assistant_talk_napoleon_mileshkin_id: str
+    ai_assistant_talk_mercury_mileshkin_id: str
 
     path_to_messages: Path =  BASE_DIR / "resources" / "messages"
     path_to_images: Path =  BASE_DIR / "resources" / "images"

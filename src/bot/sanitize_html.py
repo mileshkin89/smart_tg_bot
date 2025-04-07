@@ -1,5 +1,5 @@
 import re
-import html
+#import html
 
 def sanitize_html(text: str) -> str:
     # Removes everything <a href="...">text</a>
@@ -11,5 +11,10 @@ def sanitize_html(text: str) -> str:
     # Escape < and & (not in tags anymore)
     text = text.replace('&', '&amp;')
     text = text.replace('<', '&lt;')
+
+    # Limits the maximum message length
+    MAX_LENGTH = 4096
+    if len(text) > MAX_LENGTH:
+        text = text[:MAX_LENGTH - 4] + "..."
 
     return text.strip()
