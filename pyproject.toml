@@ -3,7 +3,7 @@ name = "smatr_tg_bot"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "user",email = "user@gmail.com"}
+    {name = "Mileshkin Oleksandr",email = "mileshkin89@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.11,<4"

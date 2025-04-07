@@ -1,8 +1,18 @@
-from enum import StrEnum
+from enum import Enum
 
 
-class SessionMode(StrEnum):
+class SessionMode(Enum):
+
+    RANDOM = "random"
     GPT = "gpt"
     TALK = "talk"
     QUIZ = "quiz"
-    RANDOM = "random"
+    TRANSLATE = "translate"
+    RESUME = "resume"
+
+
+class MessageRole(Enum):
+
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
