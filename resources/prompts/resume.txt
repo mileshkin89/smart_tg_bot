@@ -33,4 +33,7 @@ Additional information (e.g., certifications, languages, volunteer work) should 
 
 Ensure the text is structured for easy conversion into a well-formatted PDF or DOCX document. The final result should look polished and professional.
 
+If any category is empty or contains an unclear expression (for example - -- no non null asdfgd 1111 ),
+do not fill in this category when writing your resume. Leave such a category empty.
+
 Don't use HTML tags
