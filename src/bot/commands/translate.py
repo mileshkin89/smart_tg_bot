@@ -1,12 +1,6 @@
 from telegram import Update
 from telegram.error import BadRequest
-from bot.message_sender import send_html_message, send_image_bytes
-from bot.resource_loader import load_message, load_image, load_prompt
-from .start import start
-from bot.keyboards import get_choose_language_button, get_translate_menu_button
-from services import OpenAIClient
-from bot.sanitize_html import sanitize_html
-
+from openai import OpenAIError
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
@@ -15,8 +9,19 @@ from telegram.ext import (
     CallbackQueryHandler,
     filters
 )
+from bot.message_sender import send_html_message, send_image_bytes
+from bot.resource_loader import load_message, load_image
+from bot.sanitize_html import sanitize_html
+from bot.keyboards import get_choose_language_button, get_translate_menu_button
+from .start import start
+from db.repository import GptThreadRepository
+from db.enums import SessionMode, MessageRole
+from services import OpenAIClient
+from settings import config, get_logger
 
-TRANSLATE_MESSAGE = "TRANSLATE"
+
+logger = get_logger(__name__)
+TRANSLATE_MESSAGE = SessionMode.TRANSLATE.value
 
 
 async def choose_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -26,8 +31,6 @@ async def choose_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await send_image_bytes(update, context, image_bytes)
     await send_html_message(update, context, intro)
-
-    context.user_data["system_prompt"] = await load_prompt("translate")
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -52,6 +55,7 @@ async def get_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def translate_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
+    context.user_data["mode"] = None
     user_message = update.message.text
     language = context.user_data.get("language")
 
@@ -59,26 +63,57 @@ async def translate_user_message(update: Update, context: ContextTypes.DEFAULT_T
         await send_html_message(update, context, "⚠️ You have not selected a language yet. Please choose a language first.")
         return await choose_language(update, context)
 
-    user_message_to_translate = f"Translate the text after 3 line breaks into {language}\n\n\n{user_message}"
-    print(user_message_to_translate)
 
-    system_prompt = context.user_data.get("system_prompt", "")
+    # Connecting the assistant and DB
     openai_client: OpenAIClient = context.bot_data["openai_client"]
+    assistant_id = config.ai_assistant_translate_mileshkin_id
+    thread_repository: GptThreadRepository = context.bot_data["thread_repository"]
 
-    reply = await openai_client.ask(user_message=user_message_to_translate, system_prompt=system_prompt)
+    tg_user_id = update.effective_user.id
+    mode = SessionMode.QUIZ.value
+
+    thread_id = await thread_repository.get_thread_id(tg_user_id, mode)
+
+    if thread_id is None:
+        thread = await openai_client.create_thread()
+        thread_id = thread.id
+        await thread_repository.create_thread(tg_user_id, mode, thread_id)
+
+
+    user_message_to_translate = f"Translate the text after 3 line breaks into {language}\n\n\n{user_message}"
+
+    # Saving users message in DB
+    await thread_repository.add_message(thread_id, role=MessageRole.USER.value, content=user_message_to_translate)
+
+    # Get translate from assistant
+    try:
+        reply = await openai_client.ask(
+            assistant_id=assistant_id,
+            thread_id=thread_id,
+            user_message=user_message_to_translate
+        )
+    except OpenAIError as e:
+        logger.warning(f"Assistant failed to respond in /translate, translate_user_message(): {e}")
+        await update.message.reply_text("Assistant failed to respond. Please try again later.")
+        return TRANSLATE_MESSAGE
+
     reply = sanitize_html(reply)
+
+    # Saving assistants message in DB
+    await thread_repository.add_message(thread_id, role=MessageRole.ASSISTANT.value, content=reply)
 
     try:
         await send_html_message(update, context, reply)
     except BadRequest as e:
-        print(f"Error sending HTML message: {e}")
+        logger.warning(f"Error sending HTML message in /translate, translate_user_message(): {e}")
+        await update.message.reply_text("Assistant failed to respond. Please try again later.")
+        return TRANSLATE_MESSAGE
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Send the following text for translation or:",
         reply_markup=get_translate_menu_button()
     )
-
     return TRANSLATE_MESSAGE
 
 

@@ -4,16 +4,15 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler
 )
-
 from bot.commands import (
     start,
     random,
     gpt_conv_handler,
     talk_conv_handler,
     quiz_conv_handler,
+    translate_conv_handler,
     resume_handler
 )
-
 from db.initializer import DatabaseInitializer
 from db.repository import GptThreadRepository
 from services import OpenAIClient
@@ -46,6 +45,7 @@ def main():
     app.add_handler(gpt_conv_handler)
     app.add_handler(talk_conv_handler)
     app.add_handler(quiz_conv_handler)
+    app.add_handler(translate_conv_handler)
     app.add_handler(resume_handler)
 
     app.run_polling(allowed_updates=Update.ALL_TYPES)
