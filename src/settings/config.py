@@ -18,6 +18,7 @@ class AppConfig(BaseSettings):
     ai_assistant_talk_king_mileshkin_id: str
     ai_assistant_talk_napoleon_mileshkin_id: str
     ai_assistant_talk_mercury_mileshkin_id: str
+    ai_assistant_quiz_mileshkin_id: str
 
     path_to_messages: Path =  BASE_DIR / "resources" / "messages"
     path_to_images: Path =  BASE_DIR / "resources" / "images"

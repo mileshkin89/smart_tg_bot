@@ -1,41 +1,47 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from bot.message_sender import send_html_message, send_image_bytes
-from bot.resource_loader import load_message, load_image, load_prompt
-from services import OpenAIClient
-import re
-from .start import start
-from bot.keyboards import get_quiz_choose_topic_button, get_quiz_menu_button
-
+from openai import OpenAIError
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     CommandHandler,
     CallbackQueryHandler
 )
+import re
+from bot.keyboards import get_quiz_choose_topic_button, get_quiz_menu_button
+from bot.message_sender import send_html_message, send_image_bytes
+from bot.resource_loader import load_message, load_image
+from db.repository import GptThreadRepository
+from db.enums import SessionMode, MessageRole
+from services import OpenAIClient
+from settings import config, get_logger
+from .start import start
 
-QUIZ_MESSAGE = "QUIZ"
+
+logger = get_logger(__name__)
+QUIZ_MESSAGE = SessionMode.QUIZ.value
 
 
 def parse_quiz_question(text: str):
     """
-    Парсит вопрос и варианты ответов из ответа ChatGPT.
-    Ожидаемый формат:
+    Parses the question and answer options from the ChatGPT answer.
+    Expected format:
 
-    Question: <текст вопроса>
+    Question: <question text>
 
-    A) <вариант 1>
-    B) <вариант 2>
-    C) <вариант 3>
-    D) <вариант 4>
+    A) <option 1>
+    B) <option 2>
+    C) <option 3>
+    D) <option 4>
 
-    Correct Answer: <буква (A, B, C, D)>
+    Correct Answer: <letter (A, B, C, D)>
     """
     question_match = re.search(r"Question:\s*(.+)", text, re.IGNORECASE)
     options_match = re.findall(r"([A-D])\)\s*(.+)", text)
     correct_answer_match = re.search(r"Correct Answer:\s*([A-D])", text, re.IGNORECASE)
 
     if not question_match or len(options_match) != 4 or not correct_answer_match:
-        raise ValueError("Response format is incorrect or missing elements.")
+        logger.warning(f"\quiz, parse_quiz_question(). Response format is incorrect or missing elements.")
+        raise ValueError("\quiz, parse_quiz_question(). Response format is incorrect or missing elements.")
 
     question = question_match.group(1).strip()
     options = {key: value.strip() for key, value in options_match}
@@ -51,14 +57,12 @@ def update_quiz_score(context: ContextTypes.DEFAULT_TYPE, user_id: int, user_ans
     if "quiz_scores" not in context.user_data:
         context.user_data["quiz_scores"] = {}
 
-    # Если пользователь новый или начал новый квиз, сбрасываем счётчик
+    # If the user is new or has started a new quiz, we reset the counter
     if user_id not in context.user_data["quiz_scores"]:
         context.user_data["quiz_scores"][user_id] = 0
 
-    # Проверяем правильность ответа
     is_correct = user_answer == correct_answer
 
-    # Увеличиваем счётчик при правильном ответе
     if is_correct:
         context.user_data["quiz_scores"][user_id] += 1
 
@@ -83,11 +87,14 @@ async def choose_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    context.user_data["mode"] = None
     query = update.callback_query
     quiz_topic = query.data
 
     await query.answer()
 
+    # Check if the quiz topic has been selected earlier
     if quiz_topic == "next_question_quiz":
         quiz_topic = context.user_data.get("quiz_topic", None)
     else:
@@ -96,79 +103,100 @@ async def get_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not quiz_topic:
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="⚠️ Ошибка: тема викторины не найдена. Пожалуйста, выберите тему снова."
+            text="⚠️ Quiz topic not found. Please select topic again."
         )
         return QUIZ_MESSAGE
 
 
-    user_message = f"Generate an interesting mid-level question on the topic: {quiz_topic}"
-    system_prompt = await load_prompt("quiz")
-
+    # Connecting the assistant and DB
     openai_client: OpenAIClient = context.bot_data["openai_client"]
+    assistant_id = config.ai_assistant_quiz_mileshkin_id
+    thread_repository: GptThreadRepository = context.bot_data["thread_repository"]
 
-    reply = await openai_client.ask(
-        user_message=user_message,
-        system_prompt=system_prompt
-    )
+    tg_user_id = update.effective_user.id
+    mode = SessionMode.QUIZ.value
 
-    print(f"🔍 OpenAI response:\n{reply}")
-    print(f"Выбранная тема {quiz_topic}")
+    thread_id = await thread_repository.get_thread_id(tg_user_id, mode)
+
+    if thread_id is None:
+        thread = await openai_client.create_thread()
+        thread_id = thread.id
+        await thread_repository.create_thread(tg_user_id, mode, thread_id)
 
 
+    user_message = f"Generate an interesting mid-level question on the topic: {quiz_topic}"
+
+    # Get question from assistant
+    try:
+        reply = await openai_client.ask(
+            assistant_id=assistant_id,
+            thread_id=thread_id,
+            user_message=user_message
+        )
+    except OpenAIError as e:
+        logger.warning(f"Assistant failed to respond in /quiz, get_question(): {e}")
+        await update.message.reply_text("Assistant failed to respond. Please try again later.")
+        return QUIZ_MESSAGE
+
+
+    # Parse the question
     try:
         question, options, correct_answer = parse_quiz_question(reply)
     except ValueError as e:
-        print(f"❌ Ошибка парсинга: {e}")
-        print(f"🔍 Ответ от OpenAI:\n{reply}")  # Логируем весь ответ
+        logger.warning(f"\quiz, get_question(). OpenAI response is incorrect. Parsing error: {e}\nResponse from OpenAI:\n{reply}")
+        print(f"❌ Parsing error: {e}")
+        print(f"🔍 Response from OpenAI:\n{reply}")
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=f"⚠️ Ошибка обработки вопроса. Попробуйте ещё раз.\n\n(Лог: {e})"
+            text=f"⚠️ Error processing question. Try again.\n\n{e}"
         )
-        return
+        return QUIZ_MESSAGE
 
 
-    context.user_data["correct_answer"] = correct_answer  # Сохраняем правильный ответ
+    # Save the question, options and correct answer in DB
+    await thread_repository.add_message(
+        thread_id,
+        role=MessageRole.ASSISTANT.value,
+        content=f"question = {question},\noptions = {options},\ncorrect_answer = {correct_answer}"
+    )
 
+    context.user_data["correct_answer"] = correct_answer
+
+    # Create buttons with answer options
     keyboard = [[InlineKeyboardButton(f"{key}) {value}", callback_data=key)] for key, value in options.items()]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    text = f"Selected topic: {quiz_topic.capitalize()}\n\n{question}"
+    text = f"Selected topic:  {quiz_topic.capitalize()}\n\n{question}"
 
-    await send_html_message(
-        update=update,
-        context=context,
-        text=text
-    )
+    await send_html_message(update, context, text)
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Choose your answer:",
         reply_markup=reply_markup
     )
-
     return QUIZ_MESSAGE
 
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     query = update.callback_query
     user_id = update.effective_user.id
     user_answer = query.data
 
     await query.answer()
 
-    # Проверяем, правильный ли ответ, и получаем счётчик
+    # Check if the answer is correct and get a counter
     is_correct, total_correct = update_quiz_score(context, user_id, user_answer)
 
-    # Формируем сообщение о результате
     result_text = "✅ Correct!" if is_correct else f"❌ Wrong! The correct answer was: {context.user_data['correct_answer']}"
     score_text = f"Your total correct answers: {total_correct}"
 
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=f"{result_text}\n\n{score_text}",
-        reply_markup=get_quiz_menu_button()  # Кнопки: следующий вопрос, сменить тему, завершить
+        reply_markup=get_quiz_menu_button()
     )
-
     return QUIZ_MESSAGE
 
 
@@ -203,7 +231,7 @@ quiz_conv_handler = ConversationHandler(
     states={
         QUIZ_MESSAGE: [
             CallbackQueryHandler(get_question, pattern="^(science|sport|art|cinema)$"),
-            CallbackQueryHandler(handle_answer, pattern="^[ABCD]$"), #CallbackQueryHandler(get_question, pattern="^A|B|C|D$"),
+            CallbackQueryHandler(handle_answer, pattern="^[ABCD]$"),
             CallbackQueryHandler(next_question_quiz, pattern="^next_question_quiz$"),
             CallbackQueryHandler(change_topic_quiz, pattern="^change_topic_quiz$"),
             CallbackQueryHandler(end_quiz, pattern="^end_quiz$")
