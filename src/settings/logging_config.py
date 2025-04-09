@@ -1,3 +1,11 @@
+"""Logging configuration for the application.
+
+This module provides a centralized logger setup that writes logs to both the console and a file.
+Console logs show all messages starting from INFO level, while file logs store WARNING and above.
+
+The log file is stored in the directory defined by `config.path_to_logs`.
+"""
+
 import logging
 from pathlib import Path
 
@@ -5,6 +13,19 @@ from settings import config
 
 
 def get_logger(name: str = __name__) -> logging.Logger:
+    """Creates and configures a logger with both console and file handlers.
+
+    The logger will:
+    - Output INFO and higher messages to the console.
+    - Save WARNING and higher messages to a log file at `logs/app.log`.
+    - Suppress verbose logs from `httpx` library.
+
+    Args:
+        name (str): The logger name, typically `__name__`.
+
+    Returns:
+        logging.Logger: A configured logger instance.
+    """
     logger = logging.getLogger(name)
     if not logger.handlers:
         console_handler = logging.StreamHandler()

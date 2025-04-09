@@ -1,5 +1,21 @@
+"""
+Resume generation module.
+
+This module handles the interactive process of creating a resume using Telegram bot:
+- Step-by-step collection of user data (position, contacts, education, etc.)
+- Resume generation using OpenAI GPT assistant
+- File export to PDF or DOCX format
+- Option to edit specific sections before generating
+- Saving user messages and assistant responses to local DB
+
+Main Components:
+- get_position → get_additional_information: Sequential steps collecting resume info
+- confirm_data: Displays entered data and allows editing
+- generate_resume: Sends data to OpenAI and receives formatted resume
+- convert_text_to_file: Converts resume to PDF/DOCX and sends to user
+"""
+
 from telegram import Update
-from telegram.error import BadRequest
 from openai import OpenAIError
 from telegram.ext import (
     ContextTypes,
@@ -35,6 +51,16 @@ logger = get_logger(__name__)
 
 
 async def get_position(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Sends intro message and starts resume creation by asking for position.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        POSITION (str): State to handle job position input.
+    """
 
     intro = await load_message("resume")
     image_bytes = await load_image("resume")
@@ -47,6 +73,16 @@ async def get_position(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Stores user's desired position and asks for full name.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        NAME (str): State to handle name input.
+    """
 
     context.user_data["position"] = update.message.text
     await send_html_message(update=update, context=context, text="Enter your <b>full name</b>:")
@@ -55,6 +91,16 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_contacts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Stores full name and asks for contact information.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        CONTACTS (str): State to handle contacts input.
+    """
 
     context.user_data["name"] = update.message.text
     await send_html_message(update=update, context=context, text="Enter your <b>contact information</b> (phone, email, Linkedin):")
@@ -63,6 +109,16 @@ async def get_contacts(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_education(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Stores contacts and asks for education background.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        EDUCATION (str): State to handle education input.
+    """
 
     context.user_data["contacts"] = update.message.text
     await send_html_message(update=update, context=context, text="Describe your <b>education</b>:")
@@ -71,6 +127,16 @@ async def get_education(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_work_experience(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Stores education and asks for work experience.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        WORK_EXPERIENCE (str): State to handle work experience input.
+    """
 
     context.user_data["education"] = update.message.text
     await send_html_message(update=update, context=context, text="Describe your <b>work experience</b>:")
@@ -79,6 +145,16 @@ async def get_work_experience(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def get_skills(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Stores work experience and asks for skills.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        SKILLS (str): State to handle skills input.
+    """
 
     context.user_data["work_experience"] = update.message.text
     await send_html_message(update=update, context=context, text="List your <b>skills</b>:")
@@ -87,6 +163,16 @@ async def get_skills(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_additional_information(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Stores skills and asks for additional optional information (certificates, hobbies, etc.).
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        ADDITIONAL_INFORMATION (str): State to handle additional info input.
+    """
 
     context.user_data["skills"] = update.message.text
     await send_html_message(
@@ -98,6 +184,17 @@ async def get_additional_information(update: Update, context: ContextTypes.DEFAU
 
 
 async def confirm_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Collects final data, optionally updates a specific category,
+    and displays all collected resume fields for confirmation.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        CONFIRM (str): State where the user confirms or edits the resume data.
+    """
 
     message = update.message.text.strip()
 
@@ -126,6 +223,17 @@ async def confirm_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def finalize_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Informs the user how to edit resume data after preview.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        ADDITIONAL_INFORMATION (str): State to collect the corrected field.
+    """
+
     query = update.callback_query
     await query.answer()
 
@@ -138,6 +246,18 @@ async def finalize_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def generate_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Sends resume data to OpenAI assistant and receives a formatted response.
+
+    Stores the assistant reply and asks the user to choose a file format.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        FORMAT_FILE (str): State to handle file format selection.
+    """
 
     context.user_data["mode"] = None
     query = update.callback_query
@@ -193,6 +313,17 @@ async def generate_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def convert_text_to_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Converts generated resume text to a selected file format (PDF or DOCX),
+    and sends it to the user. Allows choosing another format afterwards.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        FORMAT_FILE (str): State allowing repeat conversion or finishing.
+    """
 
     query = update.callback_query
     await query.answer()
@@ -200,6 +331,7 @@ async def convert_text_to_file(update: Update, context: ContextTypes.DEFAULT_TYP
     format_file = query.data
     resume = context.user_data.get("resume", "")
 
+    # Converting the text to file
     try:
         resume_file = await convert_to_file(resume, format_file.lower())
     except ValueError as e:
@@ -219,6 +351,7 @@ async def convert_text_to_file(update: Update, context: ContextTypes.DEFAULT_TYP
 
     file_name = f"resume.{format_file}"
 
+    # Sending the file to the user
     await context.bot.send_document(
         chat_id=update.effective_chat.id,
         document=resume_file,
@@ -235,6 +368,16 @@ async def convert_text_to_file(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def end_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Ends the resume flow and returns to the main menu.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        Command start() output.
+    """
 
     query = update.callback_query
     await query.answer()
@@ -242,6 +385,26 @@ async def end_resume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return await start(update, context)
 
 
+"""
+Conversation handler for resume generation.
+
+This handler manages the full resume creation flow:
+- Sequential input of position, name, contacts, education, experience, skills, and extras
+- Resume preview with options to confirm or edit
+- GPT-based resume generation
+- File export (PDF, DOCX) and re-download options
+
+Entry points:
+    - /resume command
+
+States:
+    POSITION → ADDITIONAL_INFORMATION: Collects resume data step-by-step
+    CONFIRM: Shows summary and awaits confirmation or editing
+    FORMAT_FILE: Converts text into file and offers re-download
+
+Fallbacks:
+    - None
+"""
 resume_handler = ConversationHandler(
     entry_points=[CommandHandler("resume", get_position)],
     states={

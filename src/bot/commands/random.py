@@ -16,7 +16,25 @@ logger = get_logger(__name__)
 
 
 async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handles the /random command to fetch a surprising technical fact.
 
+    Ensures the user has a dedicated OpenAI thread for the random mode.
+    Sends a technical trivia fact using the assistant, formats the response, and logs it to the database.
+
+    Args:
+        update (telegram.Update): The incoming update from the Telegram user.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object containing bot and user data.
+
+    Raises:
+        openai.OpenAIError: If the assistant fails to respond or run the completion.
+
+    Side Effects:
+        - Resets context.user_data["mode"] to None.
+        - Sends a formatted fact as an HTML message and image.
+        - Records the user message and assistant reply in the database.
+        - Creates a new OpenAI thread if one doesn't exist.
+    """
     context.user_data["mode"] = None
 
     intro = await load_message("random")
@@ -24,6 +42,7 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await send_image_bytes(update=update, context=context, image_bytes=image_bytes)
 
+    # Connecting the assistant and DB
     openai_client: OpenAIClient = context.bot_data["openai_client"]
     thread_repository: GptThreadRepository = context.bot_data["thread_repository"]
 
@@ -39,10 +58,12 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_message = "Give me a random interesting technical fact."
 
+    # Saving users message in DB
     await thread_repository.add_message(thread_id, role=MessageRole.USER.value, content=user_message)
 
     assistant_id = config.ai_assistant_random_mileshkin_id
 
+    # Get response from assistant
     try:
         reply = await openai_client.ask(
             assistant_id=assistant_id,
@@ -56,10 +77,12 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reply = sanitize_html(reply)
 
+    # Saving assistants message in DB
     await thread_repository.add_message(thread_id, role=MessageRole.ASSISTANT.value, content=reply)
 
     combined = f"{intro}\n\n{reply}"
 
+    # Sending the assistant's response to the user
     try:
         await send_html_message(update=update, context=context, text=combined)
     except BadRequest as e:

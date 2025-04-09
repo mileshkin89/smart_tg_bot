@@ -1,3 +1,21 @@
+"""
+This module implements the translation feature using ConversationHandler.
+
+It allows users to:
+- Choose a language to translate into
+- Send a message for translation
+- Receive the translated text
+- Switch language or finish the session at any time
+
+Main Components:
+- choose_language: Sends an introductory message and shows language selection buttons.
+- get_user_message: Handles language selection and asks for the message to translate.
+- translate_user_message: Translates the provided user message using OpenAI and returns the result.
+- change_language: Lets the user change the translation language.
+- end_translate: Ends the translation session and returns to the main menu.
+- translate_conv_handler: Handles the full conversation flow of the translation feature.
+"""
+
 from telegram import Update
 from telegram.error import BadRequest
 from openai import OpenAIError
@@ -25,6 +43,15 @@ TRANSLATE_MESSAGE = SessionMode.TRANSLATE.value
 
 
 async def choose_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Sends an introduction and shows language selection buttons.
+
+    Loads intro text and image, then displays the language options.
+
+    Args:
+        update (telegram.Update): Incoming update from the Telegram user.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object containing user/bot data.
+    """
 
     intro = await load_message("translate")
     image_bytes = await load_image("translate")
@@ -40,6 +67,18 @@ async def choose_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def get_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handles language selection and prompts the user to enter a message for translation.
+
+    Saves the selected language to context.user_data.
+
+    Args:
+        update (telegram.Update): Update triggered by pressing a language button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        TRANSLATE_MESSAGE (str): Conversation state for receiving user message to translate.
+    """
 
     query = update.callback_query
     language = query.data
@@ -54,6 +93,23 @@ async def get_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def translate_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Translates the user's message using OpenAI assistant and returns the result.
+
+    Creates a new OpenAI thread if one doesn't exist, stores messages in the database,
+    and updates the Telegram user with the translated text.
+
+    Args:
+        update (telegram.Update): User text message.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        TRANSLATE_MESSAGE (str): Keeps the conversation in the same state for further translations.
+
+    Raises:
+        OpenAIError: If OpenAI assistant fails.
+        BadRequest: If the Telegram message is invalid or too long.
+    """
 
     context.user_data["mode"] = None
     user_message = update.message.text
@@ -102,6 +158,7 @@ async def translate_user_message(update: Update, context: ContextTypes.DEFAULT_T
     # Saving assistants message in DB
     await thread_repository.add_message(thread_id, role=MessageRole.ASSISTANT.value, content=reply)
 
+    # Sending the assistant's response to the user
     try:
         await send_html_message(update, context, reply)
     except BadRequest as e:
@@ -118,6 +175,17 @@ async def translate_user_message(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def change_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Restarts the conversation by allowing the user to choose another language.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        CHOOSE_LANGUAGE (function): Calls choose_language().
+    """
+
     query = update.callback_query
     await query.answer()
 
@@ -125,12 +193,41 @@ async def change_language(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def end_translate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Ends the translation session and redirects to the main start menu.
+
+    Args:
+        update (telegram.Update): Callback query from inline button.
+        context (telegram.ext.ContextTypes.DEFAULT_TYPE): Context object.
+
+    Returns:
+        start (function): Calls the start handler.
+    """
     query = update.callback_query
     await query.answer()
 
     return await start(update, context)
 
 
+"""
+Conversation handler for translation mode.
+
+This handler manages the translation flow:
+- Language selection
+- Receiving user input for translation
+- Sending translation request to OpenAI
+- Returning translated text to user
+- Changing language or ending the session
+
+Entry points:
+    - /translate command or language selection via button.
+
+States:
+    TRANSLATE_MESSAGE: Handles message input, translation, language switching, and menu interaction.
+
+Fallbacks:
+    - Change language or return to main menu via callbacks.
+"""
 translate_conv_handler = ConversationHandler(
     entry_points=[
         CommandHandler("translate", choose_language),

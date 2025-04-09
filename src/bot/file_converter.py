@@ -1,9 +1,25 @@
+"""
+The module allows to convert the client's text data into different file formats through a single interface.
+At the moment, the two most popular resume formats are PDF and DOCX.
+"""
+
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from docx import Document
 
-async def convert_to_file(resume: str, format_file: str):
+
+async def convert_to_file(resume: str, format_file: str) -> Coroutine:
+    """
+    Allows to convert client's text data into PDF or DOCX file formats through a single interface.
+
+    Attributes:
+        resume (str): client's resume text
+        format_file (str): file format for creating resume
+
+    Raises:
+        ValueError: if unsupported format file
+    """
     if format_file == "pdf":
         return await convert_to_pdf(resume)
     elif format_file == "docx":
@@ -13,6 +29,15 @@ async def convert_to_file(resume: str, format_file: str):
 
 
 async def convert_to_pdf(text: str) -> BytesIO:
+    """
+    Allows to convert client's text data into PDF file
+
+    Attributes:
+        text (str): client's resume text
+
+    Returns:
+        buffer (BytesIO): PDF file stored in RAM
+    """
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
 
@@ -33,6 +58,15 @@ async def convert_to_pdf(text: str) -> BytesIO:
 
 
 async def convert_to_docx(text: str) -> BytesIO:
+    """
+    Allows to convert client's text data into DOCX file
+
+    Attributes:
+        text (str): client's resume text
+
+    Returns:
+        buffer (BytesIO): DOCX file stored in RAM
+    """
     doc = Document()
     for line in text.split("\n"):
         doc.add_paragraph(line)
