@@ -239,16 +239,16 @@ python assistant_manager_cli.py [OPTIONS]
 
 ```bash
 # List all assistants
-python assistant_manager_cli.py --list
+python assis_manager_client.py --list
 
 # Create assistant with name and prompt
-python assistant_manager_cli.py --create -n "History Expert" -p history
+python assis_manager_client.py --create -n "History Expert" -p history
 
 # Update assistant’s instructions
-python assistant_manager_cli.py --update asst_abc123456789 --prompt new_version
+python assis_manager_client.py --update asst_abc123456789 --prompt new_version
 
 # Delete assistant
-python assistant_manager_cli.py --delete asst_abc123456789
+python assis_manager_client.py --delete asst_abc123456789
 ```
 
 ---
