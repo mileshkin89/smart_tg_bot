@@ -5,3 +5,4 @@ from .voice_chat import voice_chat_intro, voice_handler
 from .talk import talk_conv_handler
 from .quiz import quiz_conv_handler
 from .translate import translate_conv_handler
+from .resume import resume_handler
