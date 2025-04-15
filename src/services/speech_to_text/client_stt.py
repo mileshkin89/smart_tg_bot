@@ -30,5 +30,5 @@ class SpeechToText:
 
 
 stt = SpeechToText(credentials_path=str(config.path_to_google_credentials / "STT.json"))
-text = stt.recognize("audio_test2.ogg")
+text = stt.recognize(str(config.path_to_google_credentials / "audio_test2.ogg"))
 print(text)

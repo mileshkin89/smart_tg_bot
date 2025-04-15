@@ -9,7 +9,7 @@ from reportlab.pdfgen import canvas
 from docx import Document
 
 
-async def convert_to_file(resume: str, format_file: str) -> Coroutine:
+async def convert_to_file(resume: str, format_file: str):
     """
     Allows to convert client's text data into PDF or DOCX file formats through a single interface.
 

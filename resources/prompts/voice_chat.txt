@@ -4,6 +4,6 @@ Give an answer to the question. The answer should be:
 - interesting and easy to understand even,
 - not just about technical usage or dry statistics
 
-The answer should be to the point and contain no more than 5 sentences
+The answer should be to the point and contain no more than 4 sentences
 
 Do not use HTML tags

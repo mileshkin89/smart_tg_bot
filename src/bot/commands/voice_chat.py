@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes, MessageHandler, filters
-from bot.resource_loader import load_message, load_image, load_prompt
+from bot.resource_loader import load_message, load_image#, load_prompt
 from bot.message_sender import send_html_message, send_image_bytes
 from services import OpenAIClient, SpeechToText, TextToSpeech
 

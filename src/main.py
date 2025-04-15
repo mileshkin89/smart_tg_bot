@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler
 from db.initializer import DatabaseInitializer
 from db.repository import GptThreadRepository
-from services import OpenAIClient
+from services import OpenAIClient, SpeechToText
 from settings.config import config
 from bot.commands import (
     start,
@@ -51,10 +51,14 @@ def main():
         temperature=config.openai_model_temperature
     )
 
+    speech_to_text = SpeechToText(credentials_path=str(config.path_to_google_credentials / "STT.json"))
+
     app = ApplicationBuilder().token(config.tg_bot_api_key).build()
 
     app.bot_data["openai_client"] = openai_client
     app.bot_data["thread_repository"] = thread_repository
+
+    app.bot_data["speech_to_text"] = speech_to_text
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("random", random))

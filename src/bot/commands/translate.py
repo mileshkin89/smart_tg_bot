@@ -31,7 +31,7 @@ from bot.message_sender import send_html_message, send_image_bytes
 from bot.resource_loader import load_message, load_image
 from bot.sanitize_html import sanitize_html
 from bot.keyboards import get_choose_language_button, get_translate_menu_button
-from .start import start
+from bot.commands.start import start
 from db.repository import GptThreadRepository
 from db.enums import SessionMode, MessageRole
 from services import OpenAIClient
@@ -243,6 +243,7 @@ translate_conv_handler = ConversationHandler(
     },
     fallbacks=[
         CallbackQueryHandler(change_language, pattern="^change_language$"),
-        CallbackQueryHandler(end_translate, pattern="^end_translate$")
+        CallbackQueryHandler(end_translate, pattern="^end_translate$"),
+        CommandHandler("start", start)
     ]
 )
