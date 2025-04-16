@@ -57,11 +57,16 @@ class AppConfig(BaseSettings):
     ai_assistant_quiz_mileshkin_id: str
     ai_assistant_translate_mileshkin_id: str
     ai_assistant_resume_mileshkin_id: str
+    ai_assistant_voice_chat_mileshkin_id: str
 
     path_to_messages: Path =  BASE_DIR / "resources" / "messages"
     path_to_images: Path =  BASE_DIR / "resources" / "images"
     path_to_menus: Path = BASE_DIR / "resources" / "menus"
     path_to_prompts: Path = BASE_DIR / "resources" / "prompts"
+
+    path_to_input_audio_file: Path = BASE_DIR / "storage_audio" / "input"
+    path_to_converted_audio_file: Path = BASE_DIR / "storage_audio" / "converted"
+    path_to_stt_audio_file: Path = BASE_DIR / "storage_audio" / "stt"
 
     path_to_google_credentials: Path = BASE_DIR / "src" / "settings" / "google_credentials"
 
@@ -75,4 +80,5 @@ class AppConfig(BaseSettings):
 
 
 config = AppConfig()
+
 

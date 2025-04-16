@@ -11,7 +11,9 @@ from bot.commands import (
     talk_conv_handler,
     quiz_conv_handler,
     translate_conv_handler,
-    resume_handler
+    resume_handler,
+    voice_chat_intro,
+    voice_handler
 )
 
 
@@ -51,7 +53,7 @@ def main():
         temperature=config.openai_model_temperature
     )
 
-    speech_to_text = SpeechToText(credentials_path=str(config.path_to_google_credentials / "STT.json"))
+    speech_to_text = SpeechToText()
 
     app = ApplicationBuilder().token(config.tg_bot_api_key).build()
 
@@ -62,6 +64,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("random", random))
+    app.add_handler(CommandHandler("voice_chat", voice_chat_intro))
 
     app.add_handler(CallbackQueryHandler(start, pattern="^start$"))
     app.add_handler(CallbackQueryHandler(random, pattern="^random$"))
@@ -71,6 +74,8 @@ def main():
     app.add_handler(quiz_conv_handler)
     app.add_handler(translate_conv_handler)
     app.add_handler(resume_handler)
+    app.add_handler(voice_handler)
+
 
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
