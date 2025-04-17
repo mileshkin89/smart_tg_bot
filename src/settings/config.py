@@ -64,9 +64,9 @@ class AppConfig(BaseSettings):
     path_to_menus: Path = BASE_DIR / "resources" / "menus"
     path_to_prompts: Path = BASE_DIR / "resources" / "prompts"
 
-    path_to_input_audio_file: Path = BASE_DIR / "storage_audio" / "input"
-    path_to_converted_audio_file: Path = BASE_DIR / "storage_audio" / "converted"
-    path_to_stt_audio_file: Path = BASE_DIR / "storage_audio" / "stt"
+    path_to_input_audio_file: Path = BASE_DIR / "storage" / "input_audio"
+    path_to_converted_audio_file: Path = BASE_DIR / "storage" / "converted_audio"
+    path_to_stt_audio_file: Path = BASE_DIR / "storage" / "stt_audio"
 
     path_to_google_credentials: Path = BASE_DIR / "src" / "settings" / "google_credentials"
 

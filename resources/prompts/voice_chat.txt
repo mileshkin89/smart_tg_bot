@@ -6,4 +6,6 @@ Give an answer to the question. The answer should be:
 
 The answer should be to the point and contain no more than 4 sentences
 
-Do not use HTML tags
+Do not use HTML tags, do not use links to third-party resources.
+
+The answer must be in English, regardless of the language of the user's question

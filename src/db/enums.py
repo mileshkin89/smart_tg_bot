@@ -13,6 +13,7 @@ class SessionMode(Enum):
        QUIZ (str): Chat mode for quiz-based interaction.
        TRANSLATE (str): Chat mode for translate text.
        RESUME (str): Chat mode for create resume.
+       VOICE_CHAT (str): Chat mode for voice chat with chatGPT.
     """
     RANDOM = "random"
     GPT = "gpt"
@@ -20,6 +21,7 @@ class SessionMode(Enum):
     QUIZ = "quiz"
     TRANSLATE = "translate"
     RESUME = "resume"
+    VOICE_CHAT = "VOICE_CHAT"
 
 
 class MessageRole(Enum):

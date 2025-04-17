@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler
 from db.initializer import DatabaseInitializer
 from db.repository import GptThreadRepository
-from services import OpenAIClient, SpeechToText
+from services import OpenAIClient, SpeechToText, TextToSpeech
 from settings.config import config
 from bot.commands import (
     start,
@@ -54,6 +54,7 @@ def main():
     )
 
     speech_to_text = SpeechToText()
+    text_to_speech = TextToSpeech()
 
     app = ApplicationBuilder().token(config.tg_bot_api_key).build()
 
@@ -61,6 +62,7 @@ def main():
     app.bot_data["thread_repository"] = thread_repository
 
     app.bot_data["speech_to_text"] = speech_to_text
+    app.bot_data["text_to_speech"] = text_to_speech
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("random", random))
