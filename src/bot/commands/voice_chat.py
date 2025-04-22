@@ -153,6 +153,10 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
 
     reply = sanitize_html(reply)
 
+    if len(reply) > 1000 or any(bad in reply for bad in ["<?", "</", "{%", ">>>", "==", "***", "<script", "###"]):
+        logger.warning("Abnormal model output")
+        reply = "Sorry, something went wrong. Please rephrase your question and try again."
+
     await update.message.reply_text(f"🗣️ My answer: {reply}")
 
     await thread_repository.add_message(thread_id, role=MessageRole.ASSISTANT.value, content=reply)

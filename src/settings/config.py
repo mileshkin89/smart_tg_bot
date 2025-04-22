@@ -46,7 +46,7 @@ class AppConfig(BaseSettings):
     tg_bot_api_key: str
 
     openai_model: str = "gpt-3.5-turbo"
-    openai_model_temperature: float = 1.5
+    openai_model_temperature: float = 0.8
 
     ai_assistant_random_mileshkin_id: str
     ai_assistant_gpt_mileshkin_id: str
