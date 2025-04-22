@@ -99,7 +99,7 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
         logger.info(f"Save converted file in {converted_path}")
 
         speech_to_text: SpeechToText = context.bot_data["speech_to_text"]
-        text = speech_to_text.recognize(converted_path)
+        text = await speech_to_text.recognize(converted_path)
 
         if text:
             await context.bot.send_message(
@@ -114,6 +114,7 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
         for file in [input_path, converted_path]:
             try:
                 os.remove(file)
+                logger.info(f"Deleted file in {file}")
             except Exception as e:
                 logger.warning(f"Failed to delete {file}: {e}")
 

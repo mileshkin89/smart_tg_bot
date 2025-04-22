@@ -11,8 +11,12 @@ Main Components:
 
 import os
 from google.cloud import speech
-from settings.config import config
+from settings import config, get_logger
+from pathlib import Path
+import aiofiles
+import asyncio
 
+logger = get_logger(__name__)
 
 class SpeechToText:
     def __init__(self):
@@ -27,10 +31,9 @@ class SpeechToText:
         )
         self.client = speech.SpeechClient()
 
-
-    def recognize(self, file_path):
+    async def recognize(self, file_path: Path) -> str | None:
         """
-        Transcribes speech from a given audio file using Google Speech-to-Text API.
+        Asynchronously transcribes speech from a given audio file using Google Speech-to-Text API.
 
         Args:
             file_path (str or Path): Path to the audio file to be transcribed (expected format: OGG_OPUS, mono, 16kHz).
@@ -45,9 +48,8 @@ class SpeechToText:
         Side Effects:
             - Logs transcription result to the console for debugging.
         """
-
-        with open(file_path, "rb") as audio_file:
-            audio_content = audio_file.read()
+        async with aiofiles.open(file_path, "rb") as audio_file:
+            audio_content = await audio_file.read()
 
         audio = speech.RecognitionAudio(content=audio_content)
 
@@ -55,18 +57,19 @@ class SpeechToText:
             encoding=speech.RecognitionConfig.AudioEncoding.OGG_OPUS,
             sample_rate_hertz=16000,
             language_code="en-US",
-            alternative_language_codes=["uk-UA" ,"ru-RU"],
+            alternative_language_codes=["uk-UA", "ru-RU"],
             enable_automatic_punctuation=True,
             max_alternatives=3
         )
 
-        response = self.client.recognize(config=config_stt, audio=audio)
-        print(response)
+        loop = asyncio.get_running_loop()
+        response = await loop.run_in_executor(None, lambda: self.client.recognize(config=config_stt, audio=audio))
+
+        #print(response)
 
         if response.results:
-            print("Got result!")
             return response.results[0].alternatives[0].transcript
         else:
-            print("No transcription found.")
+            logger.warning("recognize(): No transcription found.")
             return None
 

@@ -21,8 +21,8 @@ def sanitize_html(text: str) -> str:
     text = text.replace('&', '&amp;')
     text = text.replace('<', '&lt;')
 
-    # Limits the maximum length of a single telegram message
-    max_length = 4096
+    # Limits the maximum length of a single telegram message is max_length = 4096
+    max_length = 2000
     if len(text) > max_length:
         text = text[:max_length - 4] + "..."
 

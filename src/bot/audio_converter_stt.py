@@ -34,7 +34,6 @@ def convert_audio_for_stt(input_path: Path) -> Path:
 
     try:
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print("Сконвертировал файл из инпут в конвертед. Внутри конвертера")
         return output_path
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"❌ FFmpeg failed to convert audio: {e}")
