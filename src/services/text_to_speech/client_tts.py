@@ -12,10 +12,11 @@ Main Components:
 """
 
 import os
+import uuid
+from pathlib import Path
+import asyncio
 from google.cloud import texttospeech
 from settings.config import config
-from pathlib import Path
-import uuid
 
 
 class TextToSpeech:
@@ -34,9 +35,9 @@ class TextToSpeech:
         )
         self.client = texttospeech.TextToSpeechClient()
 
-    def synthesize(self, text: str, language_code: str = "en-US", voice_name: str = "en-US-Wavenet-D") -> Path:
+    async def synthesize(self, text: str, language_code: str = "en-US", voice_name: str = "en-US-Wavenet-D") -> Path:
         """
-        Converts the given text into synthesized speech and saves it as an audio file.
+        Asynchronously converts the given text into synthesized speech and saves it as an audio file.
 
         Args:
             text (str): The text string to be synthesized into speech.
@@ -49,23 +50,24 @@ class TextToSpeech:
         Side Effects:
             - Creates an audio file in the directory defined by `config.path_to_stt_audio_file`.
         """
+        loop = asyncio.get_running_loop()
 
-        input_text = texttospeech.SynthesisInput(text=text)
+        def _synthesize_sync():
+            input_text = texttospeech.SynthesisInput(text=text)
+            voice = texttospeech.VoiceSelectionParams(
+                language_code=language_code,
+                name=voice_name
+            )
+            audio_config = texttospeech.AudioConfig(
+                audio_encoding=texttospeech.AudioEncoding.OGG_OPUS
+            )
+            return self.client.synthesize_speech(
+                input=input_text,
+                voice=voice,
+                audio_config=audio_config
+            )
 
-        voice = texttospeech.VoiceSelectionParams(
-            language_code=language_code,
-            name=voice_name
-        )
-
-        audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.OGG_OPUS
-        )
-
-        response = self.client.synthesize_speech(
-            input=input_text,
-            voice=voice,
-            audio_config=audio_config
-        )
+        response = await loop.run_in_executor(None, _synthesize_sync)
 
         output_dir = config.path_to_stt_audio_file
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -75,3 +77,4 @@ class TextToSpeech:
             out.write(response.audio_content)
 
         return output_path
+

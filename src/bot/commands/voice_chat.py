@@ -138,13 +138,14 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
     # Saving users message in DB
     await thread_repository.add_message(thread_id, role=MessageRole.USER.value, content=text)
 
+    user_message = f"Answer the following question in English: {text}"
 
     # Get response from assistant
     try:
         reply = await openai_client.ask(
             assistant_id=assistant_id,
             thread_id=thread_id,
-            user_message=text
+            user_message=user_message
         )
     except OpenAIError as e:
         logger.warning(f"Assistant failed to respond in /voice_chat, handle_voice_message(): {e}")
@@ -155,18 +156,19 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
 
     if len(reply) > 1000 or any(bad in reply for bad in ["<?", "</", "{%", ">>>", "==", "***", "<script", "###"]):
         logger.warning("Abnormal model output")
+        await thread_repository.add_message(thread_id, role=MessageRole.ASSISTANT.value, content=reply)
         reply = "Sorry, something went wrong. Please rephrase your question and try again."
+    else:
+        await thread_repository.add_message(thread_id, role=MessageRole.ASSISTANT.value, content=reply)
 
     await update.message.reply_text(f"🗣️ My answer: {reply}")
-
-    await thread_repository.add_message(thread_id, role=MessageRole.ASSISTANT.value, content=reply)
 
 
     # Converting text response to voice
     try:
         text_to_speech: TextToSpeech = context.bot_data["text_to_speech"]
         # Synthesized audio file saved in storage/stt_audio/.ogg
-        audio_bytes = text_to_speech.synthesize(reply)
+        audio_bytes = await text_to_speech.synthesize(reply)
         logger.info(f"Synthesized audio file saved in {audio_bytes}")
 
         if audio_bytes:
