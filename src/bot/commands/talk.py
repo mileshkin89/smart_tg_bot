@@ -170,8 +170,12 @@ async def chat_with_personality(update: Update, context: ContextTypes.DEFAULT_TY
 
     reply = sanitize_html(reply)
 
-    # Saving assistants message in DB
-    await thread_repository.add_message(thread_id, role=MessageRole.ASSISTANT.value, content=reply)
+    if len(reply) > 1000 or any(bad in reply for bad in ["<?", "</", "{%", ">>>", "==", "***", "<script", "###"]):
+        logger.warning("Abnormal model output")
+        await thread_repository.add_message(thread_id, role=MessageRole.ASSISTANT.value, content=reply)
+        reply = "Sorry, something went wrong. Please rephrase your question and try again."
+    else:
+        await thread_repository.add_message(thread_id, role=MessageRole.ASSISTANT.value, content=reply)
 
     # Sending the assistant's response to the user
     try:

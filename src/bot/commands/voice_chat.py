@@ -181,6 +181,7 @@ async def handle_voice_message(update: Update, context: ContextTypes.DEFAULT_TYP
         for file in [audio_bytes]:
             try:
                 os.remove(file)
+                logger.info(f"Deleted file in {file}")
             except Exception as e:
                 logger.warning(f"Failed to delete {file}: {e}")
 
