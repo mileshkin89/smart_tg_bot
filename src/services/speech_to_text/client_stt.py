@@ -65,8 +65,6 @@ class SpeechToText:
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(None, lambda: self.client.recognize(config=config_stt, audio=audio))
 
-        #print(response)
-
         if response.results:
             return response.results[0].alternatives[0].transcript
         else:

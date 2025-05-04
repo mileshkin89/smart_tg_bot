@@ -1,10 +1,10 @@
 {
-  "start": "Main menu",
+  "start": "Main menu \uD83D\uDE00",
   "random": "Get a random interesting fact 🧠",
   "gpt": "Write a question ChatGPT 🤖",
-  "voice_chat": "Talk to ChatGPT",
-  "talk": "Talk to a famous personality 👤",
+  "voice_chat": "Talk to ChatGPT \uD83D\uDC68\u200D\uD83D\uDCBC / \uD83D\uDC69\u200D\uD83D\uDCBC",
+  "talk": "Talk to a famous personality \uD83D\uDD2E",
   "quiz": "Take a quiz ❓",
-  "translate": "Translate text",
-  "resume": "Create resume"
+  "translate": "Translate text \uD83D\uDD04",
+  "resume": "Create resume \uD83D\uDCBC"
 }
